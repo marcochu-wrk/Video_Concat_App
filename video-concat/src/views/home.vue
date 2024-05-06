@@ -4,6 +4,7 @@
       Drop files here
     </div>
     <progress v-show="loading" :value="progress" max="100">{{ progress }}</progress>
+    <button @click="mergeVideos" v-show="files.length > 0 && !loading">Merge Videos</button>
   </div>
 </template>
 
@@ -15,39 +16,44 @@ export default {
   data(){
     return{
       loading:false,
-      progress: 0
+      progress: 0,
+      files:[]
     }
   },
-  methods:{
-    handleDrop(event){
+  methods: {
+    handleDrop(event) {
+      event.preventDefault();
       const files = event.dataTransfer.files;
-      this.uploadFiles(files);
+      this.files.push(...files);
     },
-    async uploadFiles(files){
+    async uploadFiles() {
       const formData = new FormData();
-      for(let i = 0; i< files.length; i++){
-        formData.append('files', files[i]);
+      for (let file of this.files) {
+        formData.append('files', file);
       }
       this.loading = true;
-
-      try{
+      try {
         const response = await axios.post('http://localhost:3000/upload', formData, {
-          headers:{
+          headers: {
             'Content-Type': 'multipart/form-data'
           },
           onUploadProgress: ProgressEvent => {
-            this.progress = parseInt(Math.round((ProgressEvent.loaded/ ProgressEvent.total)*100));
+            this.progress = parseInt(Math.round((ProgressEvent.loaded / ProgressEvent.total) * 100));
           }
         });
         console.log(response.data);
-      }catch{
+      } catch (error) {
         console.error('Upload Error', error);
       }
-      this.loading = false
+      this.loading = false;
+    },
+    mergeVideos() {
+      if (this.files.length > 0) {
+        this.uploadFiles();
+      } else {
+        console.error('No files to merge');
+      }
     }
-    
-  },
-  components: {
   }
 }
 </script>
